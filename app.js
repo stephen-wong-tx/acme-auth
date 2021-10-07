@@ -1,10 +1,28 @@
 const express = require('express');
 const app = express();
 app.use(express.json());
-const { models: { User }} = require('./db');
+const { models: { User, Note }} = require('./db');
 const path = require('path');
 
 app.get('/', (req, res)=> res.sendFile(path.join(__dirname, 'index.html')));
+app.use('/dist', express.static(path.join(__dirname, 'dist')));
+
+app.get('/api/notes', async(req, res, next)=> {
+  try {
+    const user = await User.byToken(req.headers.authorization);
+    const notes = await Note.findAll({
+      where: {
+        userId: user.id 
+      }
+    });
+    res.send(notes);
+    
+    
+  } 
+  catch(ex){
+    next(ex);
+  }
+}); 
 
 app.post('/api/auth', async(req, res, next)=> {
   try {

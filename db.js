@@ -1,5 +1,6 @@
+const jwt = require('jsonwebtoken');
 const Sequelize = require('sequelize');
-const { STRING } = Sequelize;
+const { STRING, TEXT } = Sequelize;
 const config = {
   logging: false
 };
@@ -9,14 +10,19 @@ if(process.env.LOGGING){
 }
 const conn = new Sequelize(process.env.DATABASE_URL || 'postgres://localhost/acme_db', config);
 
+const Note = conn.define('note', {
+    txt: TEXT
+});
 const User = conn.define('user', {
   username: STRING,
   password: STRING
 });
 
+Note.belongsTo(User);
+
 User.byToken = async(token)=> {
   try {
-    const user = await User.findByPk(token);
+    const user = await User.findByPk(jwt.verify(token, process.env.JWT).id);
     if(user){
       return user;
     }
@@ -39,7 +45,7 @@ User.authenticate = async({ username, password })=> {
     }
   });
   if(user){
-    return user.id; 
+    return jwt.sign({ id: user.id }, process.env.JWT); 
   }
   const error = Error('bad credentials');
   error.status = 401;
@@ -56,6 +62,11 @@ const syncAndSeed = async()=> {
   const [lucy, moe, larry] = await Promise.all(
     credentials.map( credential => User.create(credential))
   );
+  const notes = await Promise.all([
+    Note.create({ txt: 'larrys note', userId: larry.id}), 
+    Note.create({ txt: 'larrys note 2', userId: larry.id}), 
+    Note.create({ txt: 'moes note', userId: moe.id}) 
+  ]);
   return {
     users: {
       lucy,
@@ -68,6 +79,7 @@ const syncAndSeed = async()=> {
 module.exports = {
   syncAndSeed,
   models: {
-    User
+    User,
+    Note
   }
 };

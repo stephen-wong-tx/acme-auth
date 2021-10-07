@@ -1,9 +1,6 @@
 <html>
   <head>
-    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ==" crossorigin="anonymous"></script>
+    <script src='/dist/main.js' defer></script>
   </head>
   <body>
     <div id='root'></div>
@@ -47,7 +44,8 @@
       constructor(){
         super();
         this.state = {
-          auth: {}
+          auth: {},
+          notes: []
         };
         this.signIn = this.signIn.bind(this);
         this.logout = this.logout.bind(this);
@@ -55,6 +53,20 @@
       logout(){
         window.localStorage.removeItem('token');
         this.setState({ auth: {}});
+      }
+      async componentDidUpdate(prevProps, prevState){
+        const token = window.localStorage.getItem('token');
+        if(!token){
+          return;
+        }
+        if(prevState.auth.id !== this.state.auth.id){
+          const response = await axios.get('/api/notes', {
+            headers: {
+              authorization: token
+            }
+          });
+          this.setState({ notes: response.data });
+        }
       }
       async attemptTokenLogin(){
         const token = window.localStorage.getItem('token');
@@ -77,7 +89,8 @@
         this.attemptTokenLogin();
       }
       render(){
-        const { auth } = this.state;
+        const { auth, notes } = this.state;
+        console.log(notes)
         const { signIn, logout } = this;
         if(!auth.id){
           return <SignIn signIn={ signIn }/>
@@ -87,6 +100,17 @@
             <div>
               Welcome { auth.username }
               <button onClick={ logout }>Logout</button>
+              <ul>
+                {
+                    notes.map( note => {
+                        return (
+                            <li>
+                                { note.txt }
+                            </li>
+                        );
+                    })
+                }
+              </ul>
             </div>
           );
         }
