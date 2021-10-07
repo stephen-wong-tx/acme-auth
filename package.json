@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
+    "test": "DATABASE_URL=postgres://localhost/acme_db_test mocha",
     "test:dev": "npm run test -- --watch",
     "build": "webpack",
     "start:dev": "npm run build -- --watch --mode=development & JWT=shhhh nodemon server --ignore dist/ --ignore src/"

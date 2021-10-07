@@ -8,6 +8,7 @@ const config = {
 if(process.env.LOGGING){
   delete config.logging;
 }
+console.log(process.env.DATABASE_URL);
 const conn = new Sequelize(process.env.DATABASE_URL || 'postgres://localhost/acme_db', config);
 
 const Note = conn.define('note', {
@@ -17,6 +18,12 @@ const User = conn.define('user', {
   username: STRING,
   password: STRING
 });
+
+User.prototype.getNotes = function(){
+  return Note.findAll({
+    where: { userId: this.id }
+  })
+}
 
 Note.belongsTo(User);
 
